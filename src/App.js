@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getAuth, createUserWithEmailAndPassword , signInWithEmailAndPassword} from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile } from "firebase/auth";
 import initializeAuthentication from "./FireBase/initialize.firebase";
 
 initializeAuthentication();
@@ -7,6 +7,7 @@ initializeAuthentication();
 
 function App() {
   // all state heare
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,57 +16,10 @@ function App() {
   const auth = getAuth();
 
 
-  // handle form info submit
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    console.log(email, password);
-
-    if (password.length < 6) {
-      setError('please type 6 or longer password')
-      return;
-    }
-
-    if (isLogeIn) {
-      userLogin(email, password);
-      setError('');
-    }
-    else {
-      userRegister(email, password);
-      setError('');
-    }
+  // get name
+  const getName = (e) => {
+    setName(e.target.value);
   }
-
-  // user resister
-  const userRegister = (email, password) => {
-    console.log(email, password);
-
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(result => {
-        const user = result.user;
-        console.log(user);
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
-  }
-
-  // user login
-  const userLogin = (email, password) => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then(result => {
-        const user = result.user;
-        console.log(user);
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
-  }
-
-  // reset password
-  const restPasswordHandler = () => { }
-
-
-
   // get email
   const getEmail = (e) => {
     setEmail(e.target.value);
@@ -81,6 +35,81 @@ function App() {
   }
 
 
+  // handle form info submit
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    console.log(email, password);
+
+    if (password.length < 6) {
+      setError('please type 6 or longer password')
+      return;
+    }
+
+    if (isLogeIn) {
+      userLogin(email, password);
+
+    }
+    else {
+      userRegister(email, password);
+
+    }
+  }
+
+  // user resister
+  const userRegister = (email, password) => {
+    console.log(email, password);
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(result => {
+        const user = result.user;
+        console.log(user);
+
+        setError('');
+        verifyEmail();
+        setUserName();
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+  }
+
+  // user login
+  const userLogin = (email, password) => {
+    signInWithEmailAndPassword(auth, email, password)
+      .then(result => {
+        const user = result.user;
+        console.log(user);
+        setError('');
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+  }
+
+  // set user name
+  const setUserName = () => {
+    updateProfile(auth.currentUser, { displayName: name })
+      .then((result) => { }
+      )
+      .catch((error) => {
+        console.log(error.message);
+      });
+  }
+
+  // verify email
+  const verifyEmail = () => {
+    sendEmailVerification(auth.currentUser)
+      .then(result => {
+        console.log(result);
+      });
+  }
+
+  // reset password
+  const restPasswordHandler = () => {
+    sendPasswordResetEmail(auth, email)
+      .then((result) => { })
+  }
+
   return (
     <div className="container">
       <h1 className='text-danger text-center my-4'>Firebase Manual Authentication</h1>
@@ -88,6 +117,15 @@ function App() {
       <form onSubmit={handleFormSubmit}>
 
         <h3 className='text-primary mb-2'> {isLogeIn ? 'Please login' : 'Please Register'} </h3>
+
+        {/*Name field  */}
+
+
+        {!isLogeIn && <div className="mb-3">
+          <label htmlFor="exampleInputName" className="form-label">Full Name</label>
+          <input type="text" onBlur={getName} className="form-control" id="exampleInputName" aria-describedby="nameHelp" placeholder='Enter Your Name' required />
+
+        </div>}
 
         {/*email field  */}
         <div className="mb-3">
@@ -112,6 +150,7 @@ function App() {
         <h3 className='text-danger'>{error}</h3>
 
         <button type="submit" className="btn btn-primary">{isLogeIn ? 'Login' : 'Resister'}</button>
+        {/* reset password button */}
         <button type="submit" onClick={restPasswordHandler} className="btn btn-danger btn-sm mx-3">reset password</button>
       </form>
     </div>
